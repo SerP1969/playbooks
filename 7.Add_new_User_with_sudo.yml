@@ -1,0 +1,109 @@
+# Requered: ansible-galaxy collection install community.general
+# ansible-vault edit passwd.yml
+# Start: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 7.Add_new_User_with_sudo.yml [-u root -K]
+---
+- name: Add new User and create files in sudoers.d
+  hosts: GrpRH # rhel9v5
+  become: yes
+
+  vars:
+    user_name: john
+    admin_privs: yes
+    with_restict: yes
+    no_pwd: no # [no, yes]
+    # user_pwd: from ansible-vault passwd.yml
+    # root_pwd: from ansible-vault passwd.yml
+    comment: 'Jon Bow'
+    shell: '/bin/bash'
+    max_days: 90
+    min_days: 7
+    warn_days: 7
+    group_name: [ admins, it_sup ]
+    usr_cmd: 'ALL, RESTRICTIONS'
+    restr: 'Cmnd_Alias RESTRICTIONS = !/bin/passwd,!/bin/bash,!/bin/sh,!/usr/bin/less,!/bin/su,!/bin/su -,!/sbin/visudo,!/bin/nano,!/bin/vi,!/bin/vim'
+
+  tasks:
+
+    - name: Get pasword hash
+      ansible.builtin.set_fact:
+        paswd_hash: "{{ user_pwd | password_hash('sha512', 'secretsalt') }}"
+
+    - name: Set command-line in sudo-file
+      ansible.builtin.set_fact:
+        usr_cmd: 'ALL'
+      when: not with_restict
+
+    # - debug:
+    #     msg: "{{ paswd_hash}}"
+
+    - name: Remove 'user_name' from sudoers
+      community.general.sudoers:
+        name: "{{ user_name }}_do_as_all"
+        state: absent
+        user: "{{ user_name }}"
+
+    - name: Remove the user 'user_name'
+      ansible.builtin.user:
+        name: "{{ user_name}}"
+        state: absent
+        remove: yes
+        force: yes
+
+    - name: Deploy sudo restrictions file
+      ansible.builtin.copy: 
+        content: |
+          {{ restr }}
+        dest: /etc/sudoers.d/restrictions
+        owner: 'root'
+        mode: '0400'
+
+    - name: Create groups 
+      ansible.builtin.group:
+        name: "{{item}}"
+        state: present
+      loop: "{{ group_name }}"
+
+    - name: Add user 'user_name'
+      ansible.builtin.user:
+        name: "{{ user_name }}"
+        comment: "{{ comment }}"
+        shell: "{{ shell }}"
+        groups: "{{ group_name }}"
+        append: yes
+        password: "{{ paswd_hash }}"
+        update_password: on_create # will only set the password for newly created users.
+        password_expire_max: "{{ max_days }}" # Set maximum expiration date for password
+        password_expire_min: "{{ min_days }}"  # Set minimum expiration date for password
+        password_expire_warn: "{{ warn_days }}" # Set number of warning days for password expiration
+        ssh_key_type: ed25519
+        generate_ssh_key: yes
+        
+    - name: Set expared password now
+      ansible.builtin.command: /usr/bin/chage -d 0 {{ user_name }}
+      register: result
+      
+    # - ansible.builtin.debug:
+    #     msg: "admin_privs={{admin_privs}}"
+    #     #verbosity: 3
+            
+    - name: Allow the 'newuser' to run any commands with sudo
+      community.general.sudoers:
+        name: "{{ user_name }}_do_as_all"
+        state: present
+        user: "{{ user_name }}"
+        host: ALL
+        runas: ALL
+        commands: "{{ usr_cmd }}"
+        nopassword: "{{ no_pwd }}"
+        validation: detect
+      when: admin_privs
+
+    - name: Set authorized key taken from file
+      ansible.posix.authorized_key:
+        user: "{{ user_name }}"
+        state: present
+        key: "{{ lookup('file', '/home/serp/.ssh/id_ed25519.pub') }}"
+...
+
+
+   

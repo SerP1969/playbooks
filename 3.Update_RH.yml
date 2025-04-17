@@ -1,0 +1,16 @@
+---
+# when: ansible_facts['distribution_family'] == 'RedHat' and ansible_facts ['distribution_major_version'] >= '8'
+- name: Update hosts on RH family
+  hosts: GrpIT
+  become: yes
+
+  tasks:
+
+    - name: Upgrade all packages, excluding kernel
+      dnf:
+        name: '*'
+        #update_cache: yes
+        state: latest
+        # exclude: kernel*  # исключить kernel - пакеты
+        # security: true # Если установлено значение true, state=latestто будут устанавливаться только обновления, помеченные как связанные с безопасностью.
+        # bugfix: true # Если установлено значение true, state=latestто будут установлены только обновления, помеченные как связанные с исправлением ошибок.

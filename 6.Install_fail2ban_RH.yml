@@ -1,0 +1,89 @@
+# fail2ban-client status sshd
+---
+- name: Install fail2ban on RH_9.5
+  hosts: GrpIT
+  become: yes
+
+  vars:
+    ignor_ip_list: ignoreip = 127.0.0.1/8 172.28.48.0/20 169.254.27.100
+    distr: "{{ ansible_facts['distribution'] }}"
+    version: "{{ ansible_facts['distribution_version'] }}"
+  
+  tasks:
+
+    - name: Epel-Repo enable on
+      command: subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms
+      check_mode: no
+      when:
+        - distr == 'RedHat'
+        - version >= '9'
+    
+    - name: "Install epel-release repo"
+      ansible.builtin.package:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+        state: present
+      when:
+        - distr == 'RedHat'
+        - version >= '9'
+  
+    - name: Install fail2ban package
+      ansible.builtin.package:
+        name:
+          - epel-release
+          - fail2ban
+        state: present
+      when:
+        - distr == 'RedHat'
+        - version >= '9'
+
+    - name: "Deploy /etc/fail2ban/jail.d/default.conf"
+      ansible.builtin.copy: 
+        content: |
+          [DEFAULT]
+          maxretry = 5
+          findtime = 5m
+          bantime = 10m
+          action = firewallcmd-ipset
+          {{ ignor_ip_list }}        
+        dest: /etc/fail2ban/jail.d/default.conf
+        owner: 'root'
+        mode: '0640'
+      register: jail_defa
+      notify:
+        - restart fail2ban
+      when:
+        - distr == 'RedHat'
+        - version >= '9'
+
+    - name: "Deploy /etc/fail2ban/jail.d/ssh.conf"
+      ansible.builtin.copy: 
+        content: |
+          [sshd]
+          enabled = true
+          port = ssh
+          filter = sshd
+          action = firewallcmd-new[name=sshd]
+          backend = systemd     
+        dest: /etc/fail2ban/jail.d/ssh.conf
+        owner: 'root'
+        mode: '0640'
+      register: ssh_conf
+      notify:
+        - restart fail2ban
+      when:
+        - distr == 'RedHat'
+        - version >= '9'
+
+    - name: enable fail2ban service on boot
+      service:
+        name: fail2ban
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: restart fail2ban
+      service:
+        name: fail2ban
+        state: restarted
+      when: (jail_defa.changed) or (ssh_conf.changed)
+...

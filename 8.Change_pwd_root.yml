@@ -1,0 +1,23 @@
+# Requered: ansible-galaxy collection install community.general
+# ansible-vault edit passwd.yml
+# Start: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 8.Change_pwd_root.yml
+---
+- name: Set new password for root
+  hosts: GrpRH # rhel9v5
+  become: yes
+
+  tasks:
+
+    - name: Set new password for root
+      ansible.builtin.user:
+        name: root
+        password: "{{ root_pwd | password_hash('sha512', 'secretADDsalt') }}"
+        # root_pwd: from ansible-vault passwd.yml
+
+    - name: Set expared password now
+      ansible.builtin.command: /usr/bin/chage -d 0 root
+      register: result
+...
+
+
+   

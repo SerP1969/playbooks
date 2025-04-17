@@ -1,0 +1,40 @@
+---
+# when: ansible_facts['os_family'] == 'RedHat' and ansible_facts ['distribution_major_version'] >= '8'
+- name: Check need reboot and start reebot on RH family
+  hosts: GrpIT
+  become: yes
+
+  tasks:
+
+    - name: Check Reboot required for distr < 8
+      command: "/usr/bin/needs-restarting -r"
+      register: reboot_required
+      ignore_errors: True
+      changed_when: False
+      failed_when: reboot_required.rc == 2
+      when: ansible_facts['distribution_major_version'] < "8"
+
+    - name: Check Reboot required for distr >= 8
+      command: "/usr/bin/dnf needs-restarting"
+      register: reboot_required
+      ignore_errors: True
+      changed_when: False
+      failed_when: reboot_required.rc == 2
+      when: ansible_facts['distribution_major_version'] >= "8"    
+      
+    - debug:
+        msg: "reboot_required.rc = {{ reboot_required.rc }}  - {{ansible_facts ['virtualization_role']}}"
+
+    - name: Rebooting
+      reboot:
+          reboot_timeout: 600  # Будет ждать в течении 600сек, пока не получит ответ на test_command (нужно для web или db)
+          test_command: "uptime"
+      when: reboot_required.rc == 1 and ansible_facts ['virtualization_role'] != 'host'
+
+    # Ждать пока порт ssh будет открыт (не опрашивать в течении [delay]сек)
+    - name: Wait for port  14582 (ssh) to become open on the host, don't start checking for 60 seconds
+      wait_for:
+        port: 14582
+        state: started
+        host: 0.0.0.0
+        delay: 60

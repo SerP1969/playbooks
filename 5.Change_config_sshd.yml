@@ -1,0 +1,52 @@
+# ansible-galaxy collection install ansible.posix
+---
+- name: Change port and others restrictions in config ssh
+  hosts: GrpIT
+  become: yes
+
+  vars:
+    port_ssh: 14582
+
+  tasks:
+
+    - name: Change sel-context for port_ssh
+      community.general.seport:
+        ports: "{{ port_ssh }}"
+        proto: tcp
+        setype: ssh_port_t
+        state: present
+
+    - name: Add new ssh-port via firewalld
+      ansible.posix.firewalld:
+        port: "{{ port_ssh }}/tcp"
+        permanent: yes
+        state: enabled
+      notify:
+        - restart firewalld
+      register: add_ssh_port     
+
+    - name: Deploy new ssh-config file
+      ansible.builtin.copy: 
+        content: |
+          Port {{ port_ssh }}
+          PermitRootLogin prohibit-password
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+        dest: /etc/ssh/sshd_config.d/99-add-rules.conf
+        owner: 'root'
+        mode: '0400'
+      register: add_ssh_options
+      notify:
+       - restart sshd
+
+  handlers:
+    - name: restart firewalld
+      command: firewall-cmd --reload
+      when: add_ssh_port.changed
+
+    - name: restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      when: add_ssh_options.changed
+...

@@ -1,0 +1,70 @@
+# https://docs.ansible.com/ansible/latest/collections/community/general/nmcli_module.html
+  #   nmcli -g ip4.address,ip4.gateway,ip4.dns con show c_enp0s3
+  #  ansible-galaxy collection list|grep community.general
+  #  ansible-galaxy collection install community.general --force
+---
+- name: Create NM manual connection and start It
+  hosts: GrpIT
+  become: yes
+
+  vars:
+    nmcli_ether: { ifname: enp0s3, conn_name: c_enp0s3, ip4: 169.254.27.168/16, gw4: 169.254.27.100 }
+    dns4: [ 169.254.27.101 , 192.168.175.39 ]
+  
+  tasks:
+
+    # - debug:
+    #     msg: "{{ dns4[0] }}, {{ dns4[1]}}"
+
+    - name: Install packages for Network-Manager
+      ansible.builtin.package:
+        name:
+          - NetworkManager-libnm
+          - nm-connection-editor
+          #- libsemanage-python
+          #- policycoreutils-python
+        state: present
+      when:
+        - ansible_facts['distribution'] == 'RedHat'
+        - ansible_facts['distribution_version'] >= '8'      
+        
+    - name: Try del connection exist
+      community.general.nmcli:
+        conn_name: '{{ nmcli_ether.conn_name }}'
+        state: absent
+      when: 
+        - nmcli_ether.conn_name == 'c_enp0s3'
+        - ansible_facts['distribution'] == 'RedHat'
+        - ansible_facts['distribution_version'] >= '8'       
+
+    - name: NM add new connection
+      community.general.nmcli:
+        type: ethernet
+        state: present
+        ifname: '{{ nmcli_ether.ifname }}'
+        conn_name: '{{ nmcli_ether.conn_name }}'
+        ip4: '{{ nmcli_ether.ip4 }}'
+        gw4: '{{ nmcli_ether.gw4 }}'
+        dns4: 
+          - '{{ dns4[0] }}'
+          - '{{ dns4[1] }}'
+      when:
+        - ansible_facts['distribution'] == 'RedHat'
+        - ansible_facts['distribution_version'] >= '8'
+    
+    - name: Reload and enable connection
+      community.general.nmcli:
+        conn_name: '{{ nmcli_ether.conn_name }}'
+        state: up
+      notify:
+        - restart NetworkManager      
+      when:
+        - ansible_facts['distribution'] == 'RedHat'
+        - ansible_facts['distribution_version'] >= '8'
+
+  handlers:
+  - name: restart NetworkManager
+    service:
+      name: NetworkManager
+      state: restarted
+...
