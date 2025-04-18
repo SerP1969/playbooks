@@ -57,7 +57,7 @@
 # Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 5.Change_config_sshd.yml
 # Vault password: 
 
-# PLAY [Change port and others restrictions in config ssh] *******************************************************************************************************
+# PLAY [Change port and others restrictions in config ssh] ******************************************************************************************************
 
 # TASK [Gathering Facts] *****************************************************************************************************************************************
 # ok: [rhel9v5]

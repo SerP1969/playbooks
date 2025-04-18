@@ -1,4 +1,4 @@
-Здесь примеры ansible playbooks:
+Это примеры ansible playbooks:
 1.Add_NMcli_ether.yml - добавляет NM connection на указанный интерфейс в режиме manual (тестировал на RHEL9.5).
     * Требует установки последней версии колекции - ansible-galaxy collection install community.general --force
     Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 1.Add_NMcli_ether.yml

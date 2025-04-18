@@ -104,7 +104,7 @@
 # Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 7.Add_new_User_with_sudo.yml 
 # Vault password: 
 
-# PLAY [Add new User and create files in sudoers.d] **************************************************************************************************************
+# PLAY [Add new User and create files in sudoers.d] *************************************************************************************************************
 
 # TASK [Gathering Facts] *****************************************************************************************************************************************
 # ok: [rhel9v5]

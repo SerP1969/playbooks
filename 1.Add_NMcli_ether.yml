@@ -1,6 +1,6 @@
 # https://docs.ansible.com/ansible/latest/collections/community/general/nmcli_module.html
   #   nmcli -g ip4.address,ip4.gateway,ip4.dns con show c_enp0s3
-  #  ansible-galaxy collection list|grep community.general
+  #  ansible-galaxy collection list | grep community.general
   #  ansible-galaxy collection install community.general --force
 ---
 - name: Create NM manual connection and start It
