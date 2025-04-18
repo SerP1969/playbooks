@@ -1,6 +1,4 @@
 # Requered: ansible-galaxy collection install community.general
-# ansible-vault edit passwd.yml
-# Start: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 7.Add_new_User_with_sudo.yml [-u root -K]
 ---
 - name: Add new User and create files in sudoers.d
   hosts: GrpRH # rhel9v5
@@ -20,7 +18,7 @@
     warn_days: 7
     group_name: [ admins, it_sup ]
     usr_cmd: 'ALL, RESTRICTIONS'
-    restr: 'Cmnd_Alias RESTRICTIONS = !/bin/passwd,!/bin/bash,!/bin/sh,!/usr/bin/less,!/bin/su,!/bin/su -,!/sbin/visudo,!/bin/nano,!/bin/vi,!/bin/vim'
+    restr: 'Cmnd_Alias RESTRICTIONS = !/bin/passwd,!/bin/bash,!/bin/sh,!/bin/su,!/bin/su -,!/sbin/visudo,!/bin/less,!/bin/nano,!/bin/vi,!/bin/vim'
 
   tasks:
 
@@ -84,7 +82,6 @@
       
     # - ansible.builtin.debug:
     #     msg: "admin_privs={{admin_privs}}"
-    #     #verbosity: 3
             
     - name: Allow the 'newuser' to run any commands with sudo
       community.general.sudoers:
@@ -104,6 +101,46 @@
         state: present
         key: "{{ lookup('file', '/home/serp/.ssh/id_ed25519.pub') }}"
 ...
+# Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 7.Add_new_User_with_sudo.yml 
+# Vault password: 
 
+# PLAY [Add new User and create files in sudoers.d] **************************************************************************************************************
+
+# TASK [Gathering Facts] *****************************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Get pasword hash] ****************************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Set command-line in sudo-file] ***************************************************************************************************************************
+# skipping: [rhel9v5]
+
+# TASK [Remove 'user_name' from sudoers] *************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Remove the user 'user_name'] *****************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Deploy sudo restrictions file] ***************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Create groups] *******************************************************************************************************************************************
+# ok: [rhel9v5] => (item=admins)
+# ok: [rhel9v5] => (item=it_sup)
+
+# TASK [Add user 'user_name'] ************************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Set expared password now] ********************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Allow the 'newuser' to run any commands with sudo] *******************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Set authorized key taken from file] **********************************************************************************************************************
+# changed: [rhel9v5]
+
+# PLAY RECAP *****************************************************************************************************************************************************
+# rhel9v5                    : ok=10   changed=7    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0 
 
    

@@ -4,7 +4,7 @@
   #  ansible-galaxy collection install community.general --force
 ---
 - name: Create NM manual connection and start It
-  hosts: GrpIT
+  hosts: GrpRH
   become: yes
 
   vars:
@@ -26,7 +26,7 @@
         state: present
       when:
         - ansible_facts['distribution'] == 'RedHat'
-        - ansible_facts['distribution_version'] >= '8'      
+        - ansible_facts['distribution_version'] >= '7'      
         
     - name: Try del connection exist
       community.general.nmcli:
@@ -35,7 +35,7 @@
       when: 
         - nmcli_ether.conn_name == 'c_enp0s3'
         - ansible_facts['distribution'] == 'RedHat'
-        - ansible_facts['distribution_version'] >= '8'       
+        - ansible_facts['distribution_version'] >= '7'       
 
     - name: NM add new connection
       community.general.nmcli:
@@ -50,7 +50,7 @@
           - '{{ dns4[1] }}'
       when:
         - ansible_facts['distribution'] == 'RedHat'
-        - ansible_facts['distribution_version'] >= '8'
+        - ansible_facts['distribution_version'] >= '7'
     
     - name: Reload and enable connection
       community.general.nmcli:
@@ -60,7 +60,7 @@
         - restart NetworkManager      
       when:
         - ansible_facts['distribution'] == 'RedHat'
-        - ansible_facts['distribution_version'] >= '8'
+        - ansible_facts['distribution_version'] >= '7'
 
   handlers:
   - name: restart NetworkManager
@@ -68,3 +68,28 @@
       name: NetworkManager
       state: restarted
 ...
+# Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 1.Add_NMcli_ether.yml
+# Vault password: 
+
+# PLAY [Create NM manual connection and start It] ****************************************************************************************************************
+
+# TASK [Gathering Facts] *****************************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Install packages for Network-Manager] ********************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Try del connection exist] ********************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [NM add new connection] ***********************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Reload and enable connection] ****************************************************************************************************************************
+# changed: [rhel9v5]
+
+# RUNNING HANDLER [restart NetworkManager] ***********************************************************************************************************************
+# changed: [rhel9v5]
+
+# PLAY RECAP *****************************************************************************************************************************************************
+# rhel9v5                    : ok=6    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   

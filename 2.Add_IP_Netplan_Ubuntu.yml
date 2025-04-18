@@ -1,92 +1,11 @@
-#------ Настройка сети на Ubuntu (без NM) ----------
-  # $ ansible localhost -m setup |grep -A 5  ansible_interfaces
-        # "ansible_interfaces": [
-        # "lo",
-        # "eth0" ]
-  # $ ansible localhost -m setup |grep -A 5 dns
-    # "ansible_dns": {
-    # "nameservers": [
-    # "172.28.48.1" ]
-  # Начиная с релиза Ubuntu 17.10, для управления конфигурацией сети используется утилита Netplan. 
-  # Все конфигурационные файлы Netplan находятся в папке /etc/netplan/. 
-  # Во время запуска службы, она преобразовывает свою конфигурацию в конфигурацию той службы,
-  # которая будет управлять сетью и помещает её в каталог /run/. 
-  # Структра файла Netplan (напр. /etc/netplan/new_ip.yml):
-  # network:        # standart
-    # version: 2    # standart$ ansible localhost -m setup |grep -A 5 dns
-    # renderer: программа_бэкенд
-    # вид_интерфейса: # физические: ethernet, wifis (беспроводные) и виртуальные: vlans , bonds, bridges.
-      # имя_интерфейса: # enp3s0 или eth0
-        # параметр: значение
-  # renderer - указывает программу, для которой будут преобразоваться ваши настройки (network-manager и systemd-networkd)
-  # Значения параметров:
-  #   dhcp4 - получение IPv4 адреса по DHCP;
-  #   dhcp6 - получение IPv6 адреса по DHCP;
-  #   dhcp-identifier - если передать значение "mac", то будет использоваться MAC-адрес в качестве идентификатора DHCP;
-  #   addresses - добавляет статические адреса к интерфейсу, можно несколько;
-  #   gateway4 - указывает шлюз IPv4;
-  #   gateway6 - указывает шлюз IPv6;
-  #   nameservers - указывает DNS-серверы;
-  #   macaddress - устанавливает новый MAC-адрес;
-  #   routes - позволяет настроить маршруты таблицы маршрутизации;
-  #   routing-policy - дополнительная настройка маршрутов, для IP или подсети;
-  #   access-points - список точек доступа для Wi-Fi;
-  #   password - пароль для точки доступа Wi-Fi;
-  #   mode - режим работы сетевой карты Wi-Fi.
-  # Синтаксис самой команды netplan:
-  #   netplan опции команда
-  #В качестве команды можно передать одну из команд:
-  #   try - попробовать применить конфигурацию с возможностью отмены;
-  #   get all - проверка файла конфигурации;
-  #   apply - применить конфигурацию;
-  #   status - проверка текущей конфигурации;
-  # Настройка динамического IP в Netplan:
-  # network:
-      # version: 2
-      # renderer: networkd
-          # ethernets:
-              # enp3s0:
-                  # dhcp4: yes
-  # Теперь осталось проверить эту конфигурацию. Для этого выполните: $ sudo netplan try
-  # Если ошибок нет, программа ничего не выведет и запишет вашу конфигурацию на диск. 
-  # Если есть ошибки, утилита о них сообщит.
-  # Настройка статического IP в Netplan:
-  # network:
-      # version: 2
-      # renderer: networkd
-          # ethernets:
-              # enp3s0:
-                  # dhcp4: no
-                  # addresses: [ 172.28.59.6/20 ]
-                  # gateway4: 172.28.48.1
-                  # nameservers:
-                      # addresses: [ 172.28.48.1, 127.0.0.1 ]
-  # Настройка Wi-Fi через Netplan на Ubuntu:
-  # Для работы Wi-Fi через Networkd надо, чтобы в системе был установлен пакет wpasupplicant.
-  # Например, у нас есть точка доступа AccessPoint с паролем 12345678? и мы хотим к ней подключаться:
-  # network:
-      # version: 2
-      # renderer: networkd
-      # wifis:
-          # wlp3s0b1:
-          # dhcp4: yes
-          # dhcp6: no
-          # nameservers:
-              # addresses: [ 8.8.8.8, 8.8.4.4 ]
-          # access-points:
-              # "AccessPoint":
-                  # password: "12345678"                
-################################
-#  Additional IP with Netplan  #
-################################
-# /usr/sbin/netplan status
+ # /usr/sbin/netplan status
 ---
 - name: Add ip on Ubunty without NM
   hosts: GrpNew
   become: true
 
   vars:
-    ip_a: ['172.28.59.6/20','172.28.59.7/20']
+    ip_a: ['172.28.59.6/20','172.28.59.5/20']
     gw4: ['172.28.48.1']
     dns4: [ 172.28.48.1, 127.0.0.1 ]
 
@@ -135,3 +54,25 @@
         path: /etc/netplan/new_ip_static.yaml
       register: ip_removed              
 ...
+# Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 2.Add_IP_Netplan_Ubuntu.yml
+# Vault password: 
+
+# PLAY [Add ip on Ubunty without NM] *****************************************************************************************************************************
+
+# TASK [Gathering Facts] *****************************************************************************************************************************************
+# ok: [localhost]
+
+# TASK [Get ifname from host] ************************************************************************************************************************************
+# ok: [localhost]
+
+# TASK [Deploy /etc/netplan/new_ip_static.yaml config for ifname] ************************************************************************************************
+# changed: [localhost]
+
+# TASK [Apply netplan if required] *******************************************************************************************************************************
+# changed: [localhost]
+
+# TASK [Remove /etc/netplan/new_ip_static.yaml config-file] ******************************************************************************************************
+# changed: [localhost]
+
+# PLAY RECAP *****************************************************************************************************************************************************
+# localhost                  : ok=5    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   

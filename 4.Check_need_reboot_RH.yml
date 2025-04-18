@@ -1,7 +1,7 @@
 ---
 # when: ansible_facts['os_family'] == 'RedHat' and ansible_facts ['distribution_major_version'] >= '8'
 - name: Check need reboot and start reebot on RH family
-  hosts: GrpIT
+  hosts: GrpRH
   become: yes
 
   tasks:
@@ -22,19 +22,43 @@
       failed_when: reboot_required.rc == 2
       when: ansible_facts['distribution_major_version'] >= "8"    
       
-    - debug:
-        msg: "reboot_required.rc = {{ reboot_required.rc }}  - {{ansible_facts ['virtualization_role']}}"
+    # - debug:
+    #     msg: "reboot_required.rc = {{ reboot_required.rc }}  - {{ansible_facts ['virtualization_role']}}"
 
     - name: Rebooting
       reboot:
-          reboot_timeout: 600  # Будет ждать в течении 600сек, пока не получит ответ на test_command (нужно для web или db)
+          reboot_timeout: 200  # Будет ждать в течении 200сек, пока не получит ответ на test_command (нужно для web или db)
           test_command: "uptime"
       when: reboot_required.rc == 1 and ansible_facts ['virtualization_role'] != 'host'
 
-    # Ждать пока порт ssh будет открыт (не опрашивать в течении [delay]сек)
+    # Ждать пока порт указанный будет открыт (не опрашивать в течении [delay]сек)
     - name: Wait for port  14582 (ssh) to become open on the host, don't start checking for 60 seconds
       wait_for:
         port: 14582
         state: started
         host: 0.0.0.0
         delay: 60
+      when: reboot_required.rc == 1 and ansible_facts ['virtualization_role'] != 'host'
+...
+# Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 4.Check_need_reboot_RH.yml
+# Vault password: 
+
+# PLAY [Check need reboot and start reebot on RH family] *********************************************************************************************************
+
+# TASK [Gathering Facts] *****************************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Check Reboot required for distr < 8] *********************************************************************************************************************
+# skipping: [rhel9v5]
+
+# TASK [Check Reboot required for distr >= 8] ********************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Rebooting] ***********************************************************************************************************************************************
+# changed: [rhel9v5]
+
+# TASK [Wait for port  14582 (ssh) to become open on the host, don't start checking for 60 seconds] **************************************************************
+# ok: [rhel9v5]
+
+# PLAY RECAP *****************************************************************************************************************************************************
+# rhel9v5                    : ok=4    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   

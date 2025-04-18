@@ -1,16 +1,31 @@
 ---
 # when: ansible_facts['distribution_family'] == 'RedHat' and ansible_facts ['distribution_major_version'] >= '8'
 - name: Update hosts on RH family
-  hosts: GrpIT
+  hosts: GrpRH
   become: yes
 
   tasks:
 
-    - name: Upgrade all packages, excluding kernel
+    - name: Upgrade security packages [excluding kernel]
       dnf:
         name: '*'
-        #update_cache: yes
         state: latest
-        # exclude: kernel*  # исключить kernel - пакеты
-        # security: true # Если установлено значение true, state=latestто будут устанавливаться только обновления, помеченные как связанные с безопасностью.
-        # bugfix: true # Если установлено значение true, state=latestто будут установлены только обновления, помеченные как связанные с исправлением ошибок.
+        update_cache: yes
+        exclude: kernel*  # исключить kernel - пакеты
+        security: true # Если установлено значение true, state=latest то будут устанавливаться только обновления, помеченные как связанные с безопасностью.
+        # bugfix: true # Если установлено значение true, state=latest то будут установлены только обновления, помеченные как связанные с исправлением ошибок.
+      when: ansible_facts['distribution_family'] == 'RedHat'
+...
+# Run: ansible-playbook --ask-vault-pass --extra-vars '@passwd.yml' 3.Update_RH.yml
+# Vault password: 
+
+# PLAY [Update hosts on RH family] *******************************************************************************************************************************
+
+# TASK [Gathering Facts] *****************************************************************************************************************************************
+# ok: [rhel9v5]
+
+# TASK [Upgrade all packages, excluding kernel] ******************************************************************************************************************
+# changed: [rhel9v5]
+
+# PLAY RECAP *****************************************************************************************************************************************************
+# rhel9v5                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
