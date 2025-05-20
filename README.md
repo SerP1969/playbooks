@@ -1,7 +1,7 @@
 Это примеры ansible playbooks, созданные и проверенные Коноваловым С.П.:
 
 1.Add_NMcli_ether.yml - добавляет NetworkManager connection на указанный интерфейс в режиме manual (тестировал на RHEL9.5).
-    * Требует установки последней версии колекции - ansible-galaxy collection install community.general --force
+             * Требует установки последней версии колекции - ansible-galaxy collection install community.general --force
 
 2.Add_IP_Netplan_Ubuntu.yml - добавляет 2 IP-адреса на Ubuntu 24.04 на eth0 интерфейс netplan-ом.
 
